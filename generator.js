@@ -40,9 +40,6 @@ function getPartials(dir, defPartials){
 }
 
 function applyMustache(file, inputModel, fullSpec, version, handler){
-  if(version == null || version < 1) {
-      version = getMaxVersion(fullSpec);
-  }
   // console.log(`Applying ${Chalk.blue(file)} Mustache`);
   //inputModel must be  single schema
   let inputs = handler.handle(inputModel, fullSpec, version);
@@ -60,23 +57,22 @@ function applyMustache(file, inputModel, fullSpec, version, handler){
 }
 
 function transform(file, node, spec, version, handler){
-  let oas = {};
+  let model = {};
   if(node != null) {
     // console.log(`Tranform
     //   ${Chalk.blue(JSON.stringify(spec))}
     //   Node: ${Chalk.yellow(JSON.stringify(node))}
     //   `);
-    oas = applyMustache(file, node, spec, version, handler);
+    model = applyMustache(file, node, spec, version, handler);
   } else {
     var schema = {'value': spec};
-    oas = applyMustache(file, schema, spec, version, handler);
+    model = applyMustache(file, schema, spec, version, handler);
   }
 
-  // console.log(`OAS
-  //   ${Chalk.blue(JSON.stringify(oas))}`);
+  // console.log(`Model
+  //   ${Chalk.blue(JSON.stringify(model))}`);
 
-  //TODO overwrite the content with x-schema-gen-using instead of merging
-  spec = _.merge(spec, oas);
+  spec = _.merge(spec, model);
 }
 
 function transformAll(file, spec, pathExpression, version, handler){
@@ -88,7 +84,6 @@ function transformAll(file, spec, pathExpression, version, handler){
   } else {
     transform(file, null, spec, version, handler);
   }
-  // else validateOAS(spec); //TODO: UNCOMMENT TO VALIDATE OAS SCHEMA ALSO
   return spec;
 }
 

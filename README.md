@@ -1,2 +1,2 @@
 # jest-mustache
-utility to test mustache generated files using jest
+framework to generate files using mustache and also test them by using jest
