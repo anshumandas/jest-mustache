@@ -1,0 +1,5 @@
+description: Tests without versions
+in:
+  name: world
+out:
+  hello: world

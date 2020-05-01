@@ -1,0 +1,8 @@
+description: Test with versions
+in:
+  name: world
+out:
+  v1:
+    hello: world
+  v2:
+    hello: WORLD

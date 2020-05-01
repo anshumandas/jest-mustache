@@ -1,0 +1,10 @@
+description: Test with versions and multiple output paths
+in:
+  name: world
+out:
+  v1:
+    anything:
+      isFine:
+        hello: world
+    hi:
+      bye: world
