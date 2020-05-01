@@ -49,6 +49,7 @@ function resolveIncludesExcludes(input, dir) {
     for (var path of incs) {
       let p = _.split(path, '#', 2);
       let filePath = Path.join(dir, p[0]);
+      // console.log(`${Chalk.green(JSON.stringify(filePath))}`);
       if (FS.existsSync(filePath)) {
         const yaml = YAML.safeLoad(FS.readFileSync(filePath, 'utf8'));
         let inc = yaml;
@@ -102,7 +103,6 @@ function check(inPath, expc, file, yaml, ver, dir, testFile, handler, paths) {
     testError(inPath, dir, file, yaml, ver, handler);
   } else {
     let out = resolveIncludesExcludes(expc, Path.dirname(testFile));
-    // console.log(`Test for ${Chalk.blue(yaml.description + " : version - " + ver)}`);
     let transformed;
     try {
       transformed = generate(dir, file, yaml.in, inPath, ver, handler);

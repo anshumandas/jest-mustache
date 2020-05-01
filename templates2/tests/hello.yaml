@@ -1,5 +1,6 @@
-description: Tests without versions
+description: Tests without versions Using include
 in:
   name: world
 out:
-  hello: world
+  _include:
+    - "../../templates1/tests/hello.yaml#/out/v1"
