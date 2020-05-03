@@ -66,10 +66,10 @@ function resolveIncludesExcludes(input, dir, handler) {
 }
 
 function testError(inPath, dir, file, yaml, ver, handler) {
-  test(yaml.description, () => {
+  test(yaml.description, async () => {
     // console.log(`Testing ${Chalk.blue(yaml.description)}`);
     try{
-      const transformed = generate(dir, file, yaml.in, inPath, ver, handler).paths;
+      const transformed = await generate(dir, file, yaml.in, inPath, ver, handler).paths;
       console.log(`No Exception ${Chalk.blue(transformed)}`);
       // let stack = new Error().stack
       // console.log( stack )
@@ -84,20 +84,20 @@ function testError(inPath, dir, file, yaml, ver, handler) {
   });
 }
 
-function generate(dir, file, spec, inPath, version, handler) {
+async function generate(dir, file, spec, inPath, version, handler) {
   //remove the musache extension
   let filename = file.substring(0, file.length - 9);
-  return app.transformAll(Path.join(dir, file), spec, inPath, version, handler);
+  return await app.transformAll(Path.join(dir, file), spec, inPath, version, handler);
 }
 
-function check(inPath, expc, file, yaml, ver, dir, testFile, handler, paths) {
+async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, paths) {
   if(_.has(expc, 'error')) {
     testError(inPath, dir, file, yaml, ver, handler);
   } else {
     let out = resolveIncludesExcludes(expc, Path.dirname(testFile), handler);
     let transformed;
     try {
-      transformed = generate(dir, file, yaml.in, inPath, ver, handler);
+      transformed = await generate(dir, file, yaml.in, inPath, ver, handler);
     } catch(ex) {
       if(!ex.issues) {
         console.error(ex.stack);
@@ -163,14 +163,14 @@ function doTest(dir, inPath, testFile, handler, isVersioned, paths) {
          if (version.startsWith("v") && versions.hasOwnProperty(version)) {
            const ver = version.substring(1);
            const expc = versions[version];
-           test(Path.basename(testFile, '.yaml') + " : " + yaml.description + " : version - " + ver, () => {
-             check(inPath, expc, file, yaml, ver, dir, testFile, handler, paths);
+           test(Path.basename(testFile, '.yaml') + " : " + yaml.description + " : version - " + ver, async () => {
+             await check(inPath, expc, file, yaml, ver, dir, testFile, handler, paths);
            });
          }
        }
      } else {
-       test(Path.basename(testFile, '.yaml') + " : " + yaml.description, () => {
-         check(inPath, yaml.out, file, yaml, 1, dir, testFile, handler, paths);
+       test(Path.basename(testFile, '.yaml') + " : " + yaml.description, async () => {
+         await check(inPath, yaml.out, file, yaml, 1, dir, testFile, handler, paths);
        });
      }
    })

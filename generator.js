@@ -39,10 +39,10 @@ function getPartials(dir, defPartials){
   return partials;
 }
 
-function applyMustache(file, inputModel, fullSpec, version, handler){
+async function applyMustache(file, inputModel, fullSpec, version, handler){
   // console.log(`Applying ${Chalk.blue(file)} Mustache`);
   //inputModel must be  single schema
-  let inputs = handler.handle(inputModel, fullSpec, version);
+  let inputs = await handler.handle(inputModel, fullSpec, version);
   let partials = getPartials(Path.dirname(file));
   // console.log(`Partials ${Chalk.blue(JSON.stringify(_.keys(partials)))}`);
   let template = FS.readFileSync(file, 'utf8');
@@ -52,21 +52,22 @@ function applyMustache(file, inputModel, fullSpec, version, handler){
     yml = YAML.safeLoad(node);
   } catch(ex) {
     console.log(node);
+    console.error(ex.stack);
   }
   return yml;
 }
 
-function transform(file, node, spec, version, handler){
+async function transform(file, node, spec, version, handler){
   let model = {};
   if(node != null) {
     // console.log(`Tranform
     //   ${Chalk.blue(JSON.stringify(spec))}
     //   Node: ${Chalk.yellow(JSON.stringify(node))}
     //   `);
-    model = applyMustache(file, node, spec, version, handler);
+    model = await applyMustache(file, node, spec, version, handler);
   } else {
     var schema = {'value': spec};
-    model = applyMustache(file, schema, spec, version, handler);
+    model = await applyMustache(file, schema, spec, version, handler);
   }
 
   // console.log(`Model
@@ -75,14 +76,14 @@ function transform(file, node, spec, version, handler){
   spec = _.merge(spec, model);
 }
 
-function transformAll(file, spec, pathExpression, version, handler){
+async function transformAll(file, spec, pathExpression, version, handler){
   // console.log(`Transforming ${Chalk.blue(JSON.stringify(spec))}`);
   if(pathExpression != null) {
     for(var node of JPath.nodes(spec, pathExpression)) {
-      transform(file, node, spec, version, handler);
+      await transform(file, node, spec, version, handler);
     };
   } else {
-    transform(file, null, spec, version, handler);
+    await transform(file, null, spec, version, handler);
   }
   return spec;
 }
