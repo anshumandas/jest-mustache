@@ -8,3 +8,9 @@ function handle(inModel, fullSpec, version) {
 }
 
 exports.handle = handle;
+exports.customizer = function (objValue, srcValue) {
+  if (_.isArray(objValue)) {
+    let ret = _.union(objValue, srcValue);
+    return ret;
+  }
+}

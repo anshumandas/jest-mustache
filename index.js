@@ -34,14 +34,7 @@ function resolveExcludes(input, dir) {
   return input;
 }
 
-function customizer(objValue, srcValue) {
-  if (_.isArray(objValue)) {
-    let ret = _.sortBy(_.unionBy(objValue, srcValue, 'name'), ['name']);
-    return ret;
-  }
-}
-
-function resolveIncludesExcludes(input, dir) {
+function resolveIncludesExcludes(input, dir, handler) {
   let out = input;
   if(_.has(input, '_include')) {
     let incs = input._include;
@@ -59,13 +52,13 @@ function resolveIncludesExcludes(input, dir) {
             inc = inc[q[i]];
           }
         }
-        out = _.mergeWith(inc, out, customizer);
+        out = _.mergeWith(inc, out, handler.customizer);
       }
     }
   }
   //recurse for include within include
   if(out._include) {
-    out = resolveIncludesExcludes(out, dir);
+    out = resolveIncludesExcludes(out, dir, handler);
   }
   out = resolveExcludes(out, dir); //exclude should not have another exclude
   // console.log(`${Chalk.yellow(JSON.stringify(out))}`);
@@ -98,11 +91,10 @@ function generate(dir, file, spec, inPath, version, handler) {
 }
 
 function check(inPath, expc, file, yaml, ver, dir, testFile, handler, paths) {
-  // console.log(`Testing ${Chalk.blue(yaml.description + " : version - " + ver)}`);
   if(_.has(expc, 'error')) {
     testError(inPath, dir, file, yaml, ver, handler);
   } else {
-    let out = resolveIncludesExcludes(expc, Path.dirname(testFile));
+    let out = resolveIncludesExcludes(expc, Path.dirname(testFile), handler);
     let transformed;
     try {
       transformed = generate(dir, file, yaml.in, inPath, ver, handler);
@@ -138,8 +130,9 @@ function check(inPath, expc, file, yaml, ver, dir, testFile, handler, paths) {
           try{
             expect(received).toBeSimilar(node.value);
           } catch(ex) {
-            console.log(`${Chalk.yellow(JSON.stringify(received))}`);
-            console.log(`${Chalk.blue(JSON.stringify(node.value))}`);
+            // console.log(`Testing ${Chalk.blue(yaml.description + " : version - " + ver)}`);
+            // console.log(`${Chalk.yellow(JSON.stringify(received))}`);
+            // console.log(`${Chalk.blue(JSON.stringify(node.value))}`);
             throw ex;
           }
           tested = true;
