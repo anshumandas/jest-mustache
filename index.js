@@ -69,7 +69,8 @@ function testError(inPath, dir, file, yaml, ver, handler) {
   test(yaml.description, async () => {
     // console.log(`Testing ${Chalk.blue(yaml.description)}`);
     try{
-      const transformed = await generate(dir, file, yaml.in, inPath, ver, handler).paths;
+      const ret = await generate(dir, file, yaml.in, inPath, ver, handler);
+      const transformed = ret.paths;
       console.log(`No Exception ${Chalk.blue(transformed)}`);
       // let stack = new Error().stack
       // console.log( stack )
