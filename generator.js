@@ -94,8 +94,9 @@ function writeAndLog(filepath, filename, contents) {
     if (err) throw err;
   });
 
-  FS.writeFileSync(Path.join(filepath, filename), contents);
-  console.log(`Created ${Chalk.blue(filename)}`);
+  var fpath = Path.join(filepath, filename);
+  FS.writeFileSync(fpath, contents);
+  // console.log(`Created ${Chalk.blue(fpath)}`);
 }
 
 function processFileName(filename, spec) {
