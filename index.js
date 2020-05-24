@@ -69,7 +69,7 @@ function testError(inPath, dir, file, yaml, ver, handler) {
   test(yaml.description, async () => {
     // console.log(`Testing ${Chalk.blue(yaml.description)}`);
     try{
-      const ret = await generate(dir, file, yaml.in, inPath, ver, handler);
+      const ret = await app.transformAll(Path.join(dir, file), yaml.in, inPath, ver, handler);
       const transformed = ret.paths;
       console.log(`No Exception ${Chalk.blue(transformed)}`);
       // let stack = new Error().stack
@@ -85,12 +85,6 @@ function testError(inPath, dir, file, yaml, ver, handler) {
   });
 }
 
-async function generate(dir, file, spec, inPath, version, handler) {
-  //remove the musache extension
-  let filename = file.substring(0, file.length - 9);
-  return await app.transformAll(Path.join(dir, file), spec, inPath, version, handler);
-}
-
 async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, paths) {
   if(_.has(expc, 'error')) {
     testError(inPath, dir, file, yaml, ver, handler);
@@ -98,7 +92,7 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
     let out = resolveIncludesExcludes(expc, Path.dirname(testFile), handler);
     let transformed;
     try {
-      transformed = await generate(dir, file, yaml.in, inPath, ver, handler);
+      transformed = await app.transformAll(Path.join(dir, file), yaml.in, inPath, ver, handler);
     } catch(ex) {
       if(!ex.issues) {
         console.error(ex.stack);
@@ -123,7 +117,8 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
               received = received['/'+spl[i]];
             }
           } else {
-            received = JPath.nodes(transformed, testPath)[0].value;
+            received = JPath.nodes(transformed, testPath)[0];
+            if(received) received = received.value;
           }
           if(!received) {
             received = null;
@@ -138,7 +133,7 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
           }
           tested = true;
           pathTested = true;
-          if(!pathTested) expect("No output in path "+path).toBe(node.value);
+          if(!pathTested) expect("No output in path " + path).toBe(node.value);
         }
       }
     } else {
@@ -149,7 +144,24 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
   }
 }
 
-function doTest(dir, inPath, testFile, handler, isVersioned, paths) {
+function callTests(inPath, expc, file, yaml, ver, dir, testFile, handler, paths) {
+  var desc = Path.basename(testFile, '.yaml') + " : " + yaml.description;
+  desc = ver ? desc + " : version - " + ver : desc;
+  test(desc, async () => {
+    await check(inPath, expc, file, yaml, ver || 1, dir, testFile, handler, paths);
+  });
+  var spl = _.split(file, '.');
+  if(spl.length == 3) {
+    test("check file generation", async () => {
+      var fpath = Path.join('generated', dir);
+      fpath = ver ? Path.join(fpath, 'v'+ver) : fpath;
+      await app.generateAll(fpath, Path.join(dir, file), yaml.in, inPath, ver, handler);
+      expect(FS.existsSync(Path.join(fpath, app.processFileName(file.substring(0, file.length - 9), yaml.in)))).toBe(true);
+    });
+  }
+}
+
+function doTests(dir, inPath, testFile, handler, isVersioned, paths) {
   const yaml = YAML.safeLoad(FS.readFileSync(testFile, 'utf8'));
   FS
    .readdirSync(dir)
@@ -164,15 +176,11 @@ function doTest(dir, inPath, testFile, handler, isVersioned, paths) {
          if (version.startsWith("v") && versions.hasOwnProperty(version)) {
            const ver = version.substring(1);
            const expc = versions[version];
-           test(Path.basename(testFile, '.yaml') + " : " + yaml.description + " : version - " + ver, async () => {
-             await check(inPath, expc, file, yaml, ver, dir, testFile, handler, paths);
-           });
+           callTests(inPath, expc, file, yaml, ver, dir, testFile, handler, paths);
          }
        }
      } else {
-       test(Path.basename(testFile, '.yaml') + " : " + yaml.description, async () => {
-         await check(inPath, yaml.out, file, yaml, 1, dir, testFile, handler, paths);
-       });
+       callTests(inPath, yaml.out, file, yaml, null, dir, testFile, handler, paths);
      }
    })
 }
@@ -185,7 +193,7 @@ function findTests(dir, inPath, testDir, handler, isVersioned, paths) {
      .readdirSync(testDir)
      .forEach((file) => {
         if (FS.statSync(Path.join(testDir, file)).isFile() && file.endsWith(ext)) {
-          doTest(dir, inPath, Path.join(testDir, file), handler, isVersioned, paths);
+          doTests(dir, inPath, Path.join(testDir, file), handler, isVersioned, paths);
         } else if (FS.statSync(Path.join(testDir, file)).isDirectory()) {
           findTests(dir, inPath, Path.join(testDir, file), handler, isVersioned, paths);
         }
