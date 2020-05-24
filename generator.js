@@ -99,17 +99,23 @@ function writeAndLog(filepath, filename, contents) {
   // console.log(`Created ${Chalk.blue(fpath)}`);
 }
 
-function processFileName(filename, spec) {
+function processFileName(filename, inputs) {
   _.templateSettings.interpolate = /__([\s\S]+?)__/g;
   var compiled = _.template(filename);
-  return compiled(spec);
+  // console.log(`Inputs ${Chalk.blue(JSON.stringify(inputs))}`);
+  return compiled(inputs);
 }
 
 async function generate(filepath, file, node, spec, version, handler){
   if(file.endsWith('.mustache')) {
     //remove the musache extension
     let filename = file.substring(file.lastIndexOf('/')+1, file.length - 9);
-    filename = processFileName(filename, spec);
+    var inputs = spec;
+    if(node) {
+      inputs = node.value;
+      inputs['name'] = _.last(node.path);
+    }
+    filename = processFileName(filename, inputs);
     let contents = await applyMustache(file, node, spec, version, handler);
     writeAndLog(filepath, filename, contents);
   }
