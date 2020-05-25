@@ -111,7 +111,7 @@ async function generate(filepath, file, node, spec, version, handler){
     //remove the musache extension
     let filename = file.substring(file.lastIndexOf('/')+1, file.length - 9);
     var inputs = spec;
-    if(node) {
+    if(node && node.path) {
       inputs = node.value;
       inputs['name'] = _.last(node.path);
     }
