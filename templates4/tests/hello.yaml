@@ -1,0 +1,6 @@
+description: Test without versions external file
+in:
+  name: world
+out:
+  _file:
+    - "templates4/tests/hello.txt"

@@ -25,7 +25,7 @@ function addPartials(dir, to) {
 
 exports.templatePath = "templates/";
 
-function getPartials(dir, defPartials){
+function getPartials(dir, defPartials) {
   // console.log(`Get Partials in ${Chalk.blue(dir)}`);
   let partials = defPartials || {};
   let partials_dir = Path.join(dir, 'partials');
@@ -39,8 +39,7 @@ function getPartials(dir, defPartials){
   return partials;
 }
 
-async function applyMustache(file, inputModel, fullSpec, version, handler){
-
+async function applyHandler(inputModel, fullSpec, version, handler) {
   inputModel = inputModel || {'value': fullSpec};
 
   // console.log(`Tranform
@@ -49,43 +48,15 @@ async function applyMustache(file, inputModel, fullSpec, version, handler){
   //   `);
   // console.log(`Applying ${Chalk.blue(file)} Mustache`);
   //inputModel must be  single schema
-  let inputs = await handler.handle(inputModel, fullSpec, version);
+  return await handler.handle(inputModel, fullSpec, version);
+}
+
+function applyMustache(file, inputs) {
   let partials = getPartials(Path.dirname(file));
   // console.log(`Partials ${Chalk.blue(JSON.stringify(_.keys(partials)))}`);
   let template = FS.readFileSync(file, 'utf8');
   let node = Mustache.render(template, inputs, partials);
   return node;
-}
-
-async function transform(file, node, spec, version, handler){
-  let contents = await applyMustache(file, node, spec, version, handler);
-
-  if(_.endsWith(file, '.json.mustache') || (_.endsWith(file, '.mustache') && _.split(file, '.').length == 2)) {
-    let yml = {};
-    try {
-      yml = YAML.safeLoad(contents || {});
-    } catch(ex) {
-      console.log(node);
-      console.error(ex.stack);
-    }
-
-    // console.log(`Model
-    //   ${Chalk.blue(JSON.stringify(yml))}`);
-
-    spec = _.merge(spec, yml);
-  }
-}
-
-async function transformAll(file, spec, pathExpression, version, handler){
-  // console.log(`Transforming ${Chalk.blue(JSON.stringify(spec))}`);
-  if(pathExpression != null) {
-    for(var node of JPath.nodes(spec, pathExpression)) {
-      await transform(file, node, spec, version, handler);
-    };
-  } else {
-    await transform(file, null, spec, version, handler);
-  }
-  return spec;
 }
 
 function writeAndLog(filepath, filename, contents) {
@@ -102,38 +73,73 @@ function writeAndLog(filepath, filename, contents) {
 function processFileName(filename, inputs) {
   _.templateSettings.interpolate = /__([\s\S]+?)__/g;
   var compiled = _.template(filename);
-  // console.log(`Inputs ${Chalk.blue(JSON.stringify(inputs))}`);
-  return compiled(inputs);
+  // console.log(`Inputs ${Chalk.blue(JSON.stringify(inputs.name))}`);
+  var c = compiled(inputs);
+  // console.log(`Compiled ${Chalk.yellow(c)}`);
+  return c;
 }
 
-async function generate(filepath, file, node, spec, version, handler){
-  if(file.endsWith('.mustache')) {
-    //remove the musache extension
-    let filename = file.substring(file.lastIndexOf('/')+1, file.length - 9);
-    var inputs = spec;
-    if(node && node.path) {
-      inputs = node.value;
-      inputs['name'] = _.last(node.path);
+function transform(filepath, file, spec, ins){
+  let yml = {};
+  for (var i = 0; i < ins.length; i++) {
+    try {
+      let inp = ins[i].value || {};
+      let content = generate(filepath, file, inp);
+      yml = YAML.safeLoad(content);
+    } catch(ex) {
+      console.error(ex.stack);
     }
-    filename = processFileName(filename, inputs);
-    let contents = await applyMustache(file, node, spec, version, handler);
-    writeAndLog(filepath, filename, contents);
+    _.merge(yml, spec);
   }
+  return yml;
 }
 
-async function generateAll(filepath, file, spec, pathExpression, version, handler){
-  // console.log(`Transforming ${Chalk.blue(JSON.stringify(spec))}`);
+function generate(filepath, file, inputs){
+  let contents = {};
+  if(file.endsWith('.mustache')) {
+    contents = applyMustache(file, inputs);
+    if(filepath) {
+      //remove the musache extension
+      let filename = file.substring(file.lastIndexOf('/')+1, file.length - 9);
+      filename = processFileName(filename, inputs);
+      // console.log(`Filename ${Chalk.yellow(filename)}`);
+      writeAndLog(filepath, filename, contents);
+    }
+  }
+  return contents;
+}
+
+async function generateAll(filepath, file, spec, pathExpression, version, handler, mergeWithSpec){
+  let ins = [];
   if(pathExpression != null) {
     for(var node of JPath.nodes(spec, pathExpression)) {
-      await generate(filepath, file, node, spec, version, handler);
+      try {
+        let model = {name: _.last(node.path), value: node.value};
+
+        let inputs = await applyHandler(model, spec, version, handler);
+        if(filepath && file.includes('__')) {
+          generate(filepath, file, inputs);
+        }
+        ins.push({ name:_.last(node.path), value: inputs});
+      } catch(ex) {
+        console.log(node);
+      }
     };
   } else {
-    await generate(filepath, file, null, spec, version, handler);
+    let inputs = await applyHandler({value: spec}, spec, version, handler);
+    ins.push({value:inputs});
   }
+
+  let ret = spec;
+  if(mergeWithSpec) {
+    ret = transform(filepath, file, spec, ins);
+  } else if(!file.includes('__')) {
+    generate(filepath, file, ins);
+  }
+
+  return ret;
 }
 
-exports.transformAll = transformAll;
-exports.transform = transform;
 exports.generateAll = generateAll;
 exports.generate = generate;
 exports.writeAndLog = writeAndLog;
