@@ -82,13 +82,9 @@ function processFileName(filename, inputs) {
 function transform(filepath, file, spec, ins){
   let yml = {};
   for (var i = 0; i < ins.length; i++) {
-    try {
-      let inp = ins[i].value || {};
-      let content = generate(filepath, file, inp);
-      yml = YAML.safeLoad(content);
-    } catch(ex) {
-      console.error(ex.stack);
-    }
+    let inp = ins[i].value || {};
+    let content = generate(filepath, file, inp);
+    yml = YAML.safeLoad(content);
     _.merge(yml, spec);
   }
   return yml;
@@ -113,17 +109,13 @@ async function generateAll(filepath, file, spec, pathExpression, version, handle
   let ins = [];
   if(pathExpression != null) {
     for(var node of JPath.nodes(spec, pathExpression)) {
-      try {
-        let model = {name: _.last(node.path), value: node.value};
+      let model = {name: _.last(node.path), value: node.value};
 
-        let inputs = await applyHandler(model, spec, version, handler);
-        if(filepath && file.includes('__')) {
-          generate(filepath, file, inputs);
-        }
-        ins.push({ name:_.last(node.path), value: inputs});
-      } catch(ex) {
-        console.log(node);
+      let inputs = await applyHandler(model, spec, version, handler);
+      if(filepath && file.includes('__')) {
+        generate(filepath, file, inputs);
       }
+      ins.push({ name:_.last(node.path), value: inputs});
     };
   } else {
     let inputs = await applyHandler({value: spec}, spec, version, handler);

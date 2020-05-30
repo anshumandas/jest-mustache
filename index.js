@@ -69,7 +69,7 @@ function testError(inPath, dir, file, yaml, ver, handler) {
   test(yaml.description, async () => {
     // console.log(`Testing ${Chalk.blue(yaml.description)}`);
     try{
-      const ret = await app.transformAll(Path.join(dir, file), yaml.in, inPath, ver, handler);
+      const ret = await app.generateAll(null, Path.join(dir, file), yaml.in, inPath, ver, handler);
       const transformed = ret.paths;
       console.log(`No Exception ${Chalk.blue(transformed)}`);
       // let stack = new Error().stack
@@ -120,7 +120,7 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
               tested = true;
             }
           } else {
-            tested = checkYaml(transformed, out, path, tested, node);
+            tested = checkYaml(transformed, out, path, tested, node, yaml.description);
           }
         }
       }
@@ -132,34 +132,35 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
   }
 }
 
-async function checkYaml(transformed, out, path, tested, node) {
-    let pathTested = false;
-    let testPath = _.join(node.path, '.');
-    let received = null;
-    if(testPath.includes('/')) {
-      let spl = _.split(testPath, './');
-      received = JPath.nodes(transformed, spl[0])[0].value;
-      for (var i = 1; i < spl.length; i++) {
-        received = received['/'+spl[i]];
-      }
-    } else {
-      received = JPath.nodes(transformed, testPath)[0];
-      if(received) received = received.value;
+function checkYaml(transformed, out, path, tested, node, description) {
+  let pathTested = false;
+  let testPath = _.join(node.path, '.');
+  let received = null;
+  if(testPath.includes('/')) {
+    let spl = _.split(testPath, './');
+    received = JPath.nodes(transformed, spl[0])[0].value;
+    for (var i = 1; i < spl.length; i++) {
+      received = received['/'+spl[i]];
     }
-    if(!received) {
-      received = null;
-    }
-    try{
-      expect(received).toBeSimilar(node.value);
-    } catch(ex) {
-      // console.log(`Testing ${Chalk.blue(yaml.description + " : version - " + ver)}`);
-      // console.log(`${Chalk.yellow(JSON.stringify(received))}`);
-      // console.log(`${Chalk.blue(JSON.stringify(node.value))}`);
-      throw ex;
-    }
-    tested = true;
-    pathTested = true;
-    if(!pathTested) expect("No output in path " + path).toBe(node.value);
+  } else {
+    received = JPath.nodes(transformed, testPath)[0];
+    if(received) received = received.value;
+  }
+  if(!received) {
+    received = null;
+  }
+  try{
+    expect(received).toBeSimilar(node.value);
+  } catch(ex) {
+    // console.log(`Testing ${Chalk.blue(description)}`);
+    // console.log(`${Chalk.green(JSON.stringify(testPath))}`);
+    // console.log(`${Chalk.yellow(JSON.stringify(transformed))}`);
+    // console.log(`${Chalk.blue(JSON.stringify(node.value))}`);
+    throw ex;
+  }
+  tested = true;
+  pathTested = true;
+  if(!pathTested) expect("No output in path " + path).toBe(node.value);
   return tested;
 }
 
@@ -171,7 +172,7 @@ function callTests(inPath, expc, file, yaml, ver, dir, testFile, handler, paths)
   });
   var spl = _.split(file, '.');
   if(spl.length == 3) {
-    test("check file generation", async () => {
+    test("check file generation", () => {
       var fpath = Path.join('generated', dir);
       fpath = ver ? Path.join(fpath, 'v'+ver) : fpath;
       expect(FS.existsSync(Path.join(fpath, app.processFileName(file.substring(0, file.length - 9), yaml.in)))).toBe(true);
