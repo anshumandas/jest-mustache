@@ -126,7 +126,7 @@ async function generateAll(filepath, file, spec, pathExpression, version, handle
   if(mergeWithSpec) {
     ret = transform(filepath, file, spec, ins);
   } else if(!file.includes('__')) {
-    generate(filepath, file, ins);
+    generate(filepath, file, {spec: spec, models:ins});
   }
 
   return ret;
