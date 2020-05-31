@@ -81,11 +81,12 @@ function processFileName(filename, inputs) {
 
 function transform(filepath, file, spec, ins){
   let yml = {};
+  _.merge(yml, spec);
   for (var i = 0; i < ins.length; i++) {
     let inp = ins[i].value || {};
     let content = generate(filepath, file, inp);
-    yml = YAML.safeLoad(content);
-    _.merge(yml, spec);
+    let c = YAML.safeLoad(content);
+    _.merge(yml, c);
   }
   return yml;
 }
