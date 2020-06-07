@@ -48,7 +48,7 @@ async function applyHandler(inputModel, fullSpec, version, handler) {
   //   `);
   // console.log(`Applying ${Chalk.blue(file)} Mustache`);
   //inputModel must be  single schema
-  return await handler.handle(inputModel, fullSpec, version);
+  return handler.handle ? await handler.handle(inputModel, fullSpec, version) : fullSpec;
 }
 
 function applyMustache(file, inputs) {
@@ -108,26 +108,29 @@ function generate(filepath, file, inputs){
 
 async function generateAll(filepath, file, spec, pathExpression, version, handler, mergeWithSpec){
   let ins = [];
-  if(pathExpression != null) {
-    for(var node of JPath.nodes(spec, pathExpression)) {
-      let model = {name: _.last(node.path), value: node.value};
+  if(handler.pre) handler.pre(spec);
+  if(handler.handle) {
+    if(pathExpression != null) {
+      for(var node of JPath.nodes(spec, pathExpression)) {
+        let model = {name: _.last(node.path), value: node.value};
 
-      let inputs = await applyHandler(model, spec, version, handler);
-      if(filepath && file.includes('__')) {
-        generate(filepath, file, inputs);
-      }
-      ins.push({ name:_.last(node.path), value: inputs});
-    };
-  } else {
-    let inputs = await applyHandler({value: spec}, spec, version, handler);
-    ins.push({value:inputs});
+        let inputs = await applyHandler(model, spec, version, handler);
+        if(filepath && file.includes('__')) {
+          generate(filepath, file, inputs);
+        }
+        ins.push({ name:_.last(node.path), value: inputs});
+      };
+    } else {
+      let inputs = await applyHandler({value: spec}, spec, version, handler);
+      ins.push({value:inputs});
+    }
   }
 
   let ret = spec;
   if(mergeWithSpec) {
     ret = transform(filepath, file, spec, ins);
   } else if(!file.includes('__')) {
-    generate(filepath, file, {spec: spec, models:ins});
+    generate(filepath, file, handler.post ? handler.post(spec, ins) : {spec: spec, models:ins});
   }
 
   return ret;

@@ -1,20 +1,20 @@
 {
   "name": "jest-mustache",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "utility to test mustache generated files using jest",
   "main": "index.js",
   "dependencies": {
     "chalk": "^2.4.1",
     "fs-extra": "^7.0.1",
-    "mustache": "^3.0.1",
-    "js-yaml": "^3.5.3",
+    "js-yaml": "^3.14.0",
     "jsonpath": "^1.0.0",
-    "my-mustache-wax": "^1.0.2",
-    "lodash": "^4.5.0"
+    "lodash": "^4.5.0",
+    "mustache": "^3.0.1",
+    "my-mustache-wax": "^1.0.2"
   },
   "devDependencies": {
-    "jest": "^25.2.7",
-    "jest-similar": "^1.0.0"
+    "jest": "^25.5.4",
+    "jest-similar": "^1.0.3"
   },
   "scripts": {
     "test": "jest"
