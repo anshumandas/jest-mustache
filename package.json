@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "jest": "^25.5.4",
-    "jest-similar": "^1.0.3"
+    "jest-similar": "^1.0.4"
   },
   "scripts": {
     "test": "jest"
