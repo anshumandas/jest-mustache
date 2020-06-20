@@ -133,6 +133,7 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
 }
 
 function checkYaml(transformed, out, path, tested, node, description) {
+  // console.log(`${Chalk.blue(description)}`);
   let pathTested = false;
   let testPath = _.join(node.path, '.');
   let received = null;
@@ -152,9 +153,9 @@ function checkYaml(transformed, out, path, tested, node, description) {
   try{
     expect(received).toBeSimilar(node.value);
   } catch(ex) {
-    // console.log(`Testing ${Chalk.blue(description)}`);
-    // console.log(`${Chalk.green(JSON.stringify(testPath))}`);
-    // console.log(`${Chalk.yellow(JSON.stringify(transformed))}`);
+    ex.message = `Test path ${Chalk.green(JSON.stringify(testPath))} of
+    ${Chalk.yellow(JSON.stringify(_.keys(transformed.paths)))}
+    ${ex.message}`;
     // console.log(`${Chalk.blue(JSON.stringify(node.value))}`);
     throw ex;
   }
