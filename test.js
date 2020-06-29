@@ -27,3 +27,9 @@ describe('Recursively test with files in templates4 folder', function () {
     let paths = ['_file']; //jsonpaths after out
     app.testInFolder('templates4', inputJPath, MustacheHandler, isVersioned, paths);
 });
+
+describe('test all tests in a yaml file', function () {
+    let isVersioned = false; //out does not have params like v1, v2 ...
+    let paths = ['expected']; //jsonpaths after out
+    app.testInFile('templates5/tests.yml', "tests", MustacheHandler, isVersioned, paths);
+});

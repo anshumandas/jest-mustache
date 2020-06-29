@@ -65,11 +65,17 @@ function resolveIncludesExcludes(input, dir, handler) {
   return out;
 }
 
+function getInput(input) {
+  //TODO check if input is file and parse the file and return yaml content
+  return input;
+}
+
 function testError(inPath, dir, file, yaml, ver, handler) {
   test(yaml.description, async () => {
     // console.log(`Testing ${Chalk.blue(yaml.description)}`);
     try{
-      const ret = await app.generateAll(null, Path.join(dir, file), yaml.in, inPath, ver, handler);
+      //TODO check if yaml has template and use that instead of scanning via generateAll
+      const ret = await app.generateAll(null, Path.join(dir, file), getInput(yaml.in), inPath, ver, handler);
       const transformed = ret.paths;
       console.log(`No Exception ${Chalk.blue(transformed)}`);
       // let stack = new Error().stack
@@ -114,8 +120,8 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
               expect(FS.existsSync(f)).toBe(true);
               let out = Path.join(fpath, app.processFileName(file.substring(0, file.length - 9), yaml.in));
               expect(FS.existsSync(out)).toBe(true);
-              let a = FS.readFileSync(f);
-              let b = FS.readFileSync(out);
+              let a = FS.readFileSync(f, 'utf8');
+              let b = FS.readFileSync(out, 'utf8');
               expect(_.trim(a)).toEqual(_.trim(b));
               tested = true;
             }
@@ -139,9 +145,15 @@ function checkYaml(transformed, out, path, tested, node, description) {
   let received = null;
   if(testPath.includes('/')) {
     let spl = _.split(testPath, './');
-    received = JPath.nodes(transformed, spl[0])[0].value;
-    for (var i = 1; i < spl.length; i++) {
-      received = received['/'+spl[i]];
+    received = JPath.nodes(transformed, spl[0])[0];
+    if(received) {
+      received = received.value;
+      for (var i = 1; i < spl.length; i++) {
+        received = received['/'+spl[i]];
+      }
+    } else {
+      console.log(transformed);
+      console.log(spl[0]);
     }
   } else {
     received = JPath.nodes(transformed, testPath)[0];
@@ -239,4 +251,9 @@ function recurseTest(dir, inPath, handler, isVersioned, paths) {
 exports.testInFolder = function(dir, inPath, handler, isVersioned, paths, partialsPath) {
   app.templatePath = partialsPath || dir;
   recurseTest(dir, inPath, handler, isVersioned, paths);
+}
+
+exports.testInFile = function(dir, inPath, handler, isVersioned, paths, partialsPath) {
+  app.templatePath = partialsPath || dir;
+  //TODO add test a yaml file with multiple tests such as those in https://github.com/mustache/spec
 }

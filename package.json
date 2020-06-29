@@ -1,6 +1,6 @@
 {
   "name": "jest-mustache",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "utility to test mustache generated files using jest",
   "main": "index.js",
   "dependencies": {
@@ -10,11 +10,11 @@
     "jsonpath": "^1.0.0",
     "lodash": "^4.5.0",
     "mustache": "^3.0.1",
-    "my-mustache-wax": "^1.0.2"
+    "my-mustache-wax": "^3.0.2"
   },
   "devDependencies": {
     "jest": "^25.5.4",
-    "jest-similar": "^1.0.4"
+    "jest-similar": "^1.0.5"
   },
   "scripts": {
     "test": "jest"
