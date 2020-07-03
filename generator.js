@@ -130,7 +130,7 @@ async function generateAll(filepath, file, spec, pathExpression, version, handle
   if(mergeWithSpec) {
     ret = transform(filepath, file, spec, ins);
   } else if(!file.includes('__')) {
-    generate(filepath, file, handler.post ? handler.post(spec, ins) : {spec: spec, models:ins});
+    generate(filepath, file, handler.post ? handler.post(spec, ins) : ins[0].value);
   }
 
   return ret;
