@@ -1,20 +1,20 @@
 'use strict';
 
-const FS = require('fs-extra');
+const Fs = require('fs-extra');
 const Path = require('path');
 const _ = require('lodash');
-const YAML = require('js-yaml');
+const Yaml = require('js-yaml');
 const Chalk = require('chalk');
 const Mustache = require('mustache');
 const JPath = require('jsonpath');
 
 function addPartials(dir, to) {
-  if (FS.existsSync(dir)) {
-    FS
+  if (Fs.existsSync(dir)) {
+    Fs
      .readdirSync(dir)
      .forEach((file) => {
-       if(FS.statSync(Path.join(dir, file)).isFile()) {
-         to[Path.basename(file, '.mustache')] = FS.readFileSync(Path.join(dir, file), 'utf8');
+       if(Fs.statSync(Path.join(dir, file)).isFile()) {
+         to[Path.basename(file, '.mustache')] = Fs.readFileSync(Path.join(dir, file), 'utf8');
        } else {
          addPartials(Path.join(dir, file), to);
        }
@@ -54,19 +54,19 @@ async function applyHandler(inputModel, fullSpec, version, handler) {
 function applyMustache(file, inputs) {
   let partials = getPartials(Path.dirname(file));
   // console.log(`Partials ${Chalk.blue(JSON.stringify(_.keys(partials)))}`);
-  let template = FS.readFileSync(file, 'utf8');
+  let template = Fs.readFileSync(file, 'utf8');
   let node = Mustache.render(template, inputs, partials);
   return node;
 }
 
 function writeAndLog(filepath, filename, contents) {
   //split file path and mkdirs if not existing
-  FS.mkdirpSync(filepath, { recursive: true }, (err) => {
+  Fs.mkdirpSync(filepath, { recursive: true }, (err) => {
     if (err) throw err;
   });
 
   var fpath = Path.join(filepath, filename);
-  FS.writeFileSync(fpath, contents);
+  Fs.writeFileSync(fpath, contents);
   // console.log(`Created ${Chalk.blue(fpath)}`);
 }
 
@@ -85,7 +85,7 @@ function transform(filepath, file, spec, ins){
   for (var i = 0; i < ins.length; i++) {
     let inp = ins[i].value || {};
     let content = generate(filepath, file, inp);
-    let c = YAML.safeLoad(content);
+    let c = Yaml.safeLoad(content);
     _.merge(yml, c);
   }
   return yml;

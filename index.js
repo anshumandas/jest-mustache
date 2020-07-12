@@ -1,7 +1,7 @@
 const Chalk = require('chalk');
 const app = require('./generator');
-const YAML = require('js-yaml');
-const FS = require('fs-extra');
+const Yaml = require('js-yaml');
+const Fs = require('fs-extra');
 const Path = require('path');
 const _ = require('lodash');
 const JPath = require('jsonpath');
@@ -12,8 +12,8 @@ function resolveExcludes(input, dir) {
     for (var path of input._exclude) {
       let p = _.split(path, '#', 2);
       let filePath = Path.join(dir, p[0]);
-      if (FS.existsSync(filePath)) {
-        const yaml = YAML.safeLoad(FS.readFileSync(filePath, 'utf8'));
+      if (Fs.existsSync(filePath)) {
+        const yaml = Yaml.safeLoad(Fs.readFileSync(filePath, 'utf8'));
         let y = yaml;
         let pp = [];
         if(p[1] != null) {
@@ -43,8 +43,8 @@ function resolveIncludesExcludes(input, dir, handler) {
       let p = _.split(path, '#', 2);
       let filePath = Path.join(dir, p[0]);
       // console.log(`${Chalk.green(JSON.stringify(filePath))}`);
-      if (FS.existsSync(filePath)) {
-        const yaml = YAML.safeLoad(FS.readFileSync(filePath, 'utf8'));
+      if (Fs.existsSync(filePath)) {
+        const yaml = Yaml.safeLoad(Fs.readFileSync(filePath, 'utf8'));
         let inc = yaml;
         if(p[1] != null) {
           let q = _.split(p[1], '/');
@@ -117,11 +117,11 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
         for(var node of expectNodes) {
           if(path == "_file") {
             for (var f of node.value) {
-              expect(FS.existsSync(f)).toBe(true);
+              expect(Fs.existsSync(f)).toBe(true);
               let out = Path.join(fpath, app.processFileName(file.substring(0, file.length - 9), yaml.in));
-              expect(FS.existsSync(out)).toBe(true);
-              let a = FS.readFileSync(f, 'utf8');
-              let b = FS.readFileSync(out, 'utf8');
+              expect(Fs.existsSync(out)).toBe(true);
+              let a = Fs.readFileSync(f, 'utf8');
+              let b = Fs.readFileSync(out, 'utf8');
               expect(_.trim(a)).toEqual(_.trim(b));
               tested = true;
             }
@@ -188,16 +188,16 @@ function callTests(inPath, expc, file, yaml, ver, dir, testFile, handler, paths)
     test("check file generation", () => {
       var fpath = Path.join('generated', dir);
       fpath = ver ? Path.join(fpath, 'v'+ver) : fpath;
-      expect(FS.existsSync(Path.join(fpath, app.processFileName(file.substring(0, file.length - 9), yaml.in)))).toBe(true);
+      expect(Fs.existsSync(Path.join(fpath, app.processFileName(file.substring(0, file.length - 9), yaml.in)))).toBe(true);
     });
   }
 }
 
 function doTests(dir, inPath, testFile, handler, isVersioned, paths) {
-  const yaml = YAML.safeLoad(FS.readFileSync(testFile, 'utf8'));
-  FS
+  const yaml = Yaml.safeLoad(Fs.readFileSync(testFile, 'utf8'));
+  Fs
    .readdirSync(dir)
-   .filter(file => (FS.statSync(Path.join(dir, file)).isFile()) && file.endsWith('.mustache'))
+   .filter(file => (Fs.statSync(Path.join(dir, file)).isFile()) && file.endsWith('.mustache'))
    .forEach((file) => {
      //testing only paths at present. This would need to be extended to the other parts that change
      if(_.has(yaml, 'error')) {
@@ -221,12 +221,12 @@ function findTests(dir, inPath, testDir, handler, isVersioned, paths) {
   const ext = '.yaml';
 
   describe('Test suite ' + testDir, function () {
-    FS
+    Fs
      .readdirSync(testDir)
      .forEach((file) => {
-        if (FS.statSync(Path.join(testDir, file)).isFile() && file.endsWith(ext)) {
+        if (Fs.statSync(Path.join(testDir, file)).isFile() && file.endsWith(ext)) {
           doTests(dir, inPath, Path.join(testDir, file), handler, isVersioned, paths);
-        } else if (FS.statSync(Path.join(testDir, file)).isDirectory()) {
+        } else if (Fs.statSync(Path.join(testDir, file)).isDirectory()) {
           findTests(dir, inPath, Path.join(testDir, file), handler, isVersioned, paths);
         }
      });
@@ -235,12 +235,12 @@ function findTests(dir, inPath, testDir, handler, isVersioned, paths) {
 
 function recurseTest(dir, inPath, handler, isVersioned, paths) {
   const testDir = Path.join(dir, 'tests');
-  if (FS.existsSync(testDir)) {
+  if (Fs.existsSync(testDir)) {
     findTests(dir, inPath, testDir, handler, isVersioned, paths)
    } else {
-     FS
+     Fs
       .readdirSync(dir)
-      .filter(file => (FS.statSync(Path.join(dir, file)).isDirectory() && file !== 'partials' ))
+      .filter(file => (Fs.statSync(Path.join(dir, file)).isDirectory() && file !== 'partials' ))
       .forEach((file) => {
         const path = Path.join(dir, file);
         recurseTest(path, inPath, handler, isVersioned, paths);

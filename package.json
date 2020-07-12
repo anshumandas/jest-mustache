@@ -1,6 +1,6 @@
 {
   "name": "jest-mustache",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "utility to test mustache generated files using jest",
   "main": "index.js",
   "dependencies": {
