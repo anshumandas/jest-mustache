@@ -97,13 +97,13 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
   } else {
     let out = resolveIncludesExcludes(expc, Path.dirname(testFile), handler);
     let transformed;
-    var fpath = Path.join('generated', dir);
+    var fpath = Path.join('generated', testFile.split('.')[0]);
     fpath = ver ? Path.join(fpath, 'v'+ver) : fpath;
     try {
       transformed = await app.generateAll(fpath, Path.join(dir, file), yaml.in, inPath, ver || 1, handler, true);
     } catch(ex) {
       if(!ex.issues) {
-        console.error(ex.stack);
+        console.log(ex.stack);
       }
       expect({'message':ex.message, 'issues': ex.issues}).toEqual({"error": false});
     }
@@ -122,7 +122,7 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
               expect(Fs.existsSync(out)).toBe(true);
               let a = Fs.readFileSync(f, 'utf8');
               let b = Fs.readFileSync(out, 'utf8');
-              expect(_.trim(a)).toEqual(_.trim(b));
+              expect(a).toBeSimilar(b);
               tested = true;
             }
           } else {
@@ -186,7 +186,7 @@ function callTests(inPath, expc, file, yaml, ver, dir, testFile, handler, paths)
   var spl = _.split(file, '.');
   if(spl.length == 3) {
     test("check file generation", () => {
-      var fpath = Path.join('generated', dir);
+      var fpath = Path.join('generated', testFile.split('.')[0]);
       fpath = ver ? Path.join(fpath, 'v'+ver) : fpath;
       expect(Fs.existsSync(Path.join(fpath, app.processFileName(file.substring(0, file.length - 9), yaml.in)))).toBe(true);
     });
@@ -219,7 +219,6 @@ function doTests(dir, inPath, testFile, handler, isVersioned, paths) {
 
 function findTests(dir, inPath, testDir, handler, isVersioned, paths) {
   const ext = '.yaml';
-
   describe('Test suite ' + testDir, function () {
     Fs
      .readdirSync(testDir)

@@ -85,8 +85,13 @@ function transform(filepath, file, spec, ins){
   for (var i = 0; i < ins.length; i++) {
     let inp = ins[i].value || {};
     let content = generate(filepath, file, inp);
-    let c = Yaml.safeLoad(content);
-    _.merge(yml, c);
+    var spl = _.split(file, '.');
+    if(spl.length != 3 || 'yaml' == spl[1]) {
+      let c = Yaml.safeLoad(content);
+      _.merge(yml, c);
+    } else {
+      yml = content;
+    }
   }
   return yml;
 }
