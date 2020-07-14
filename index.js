@@ -120,9 +120,9 @@ async function check(inPath, expc, file, yaml, ver, dir, testFile, handler, path
               expect(Fs.existsSync(f)).toBe(true);
               let out = Path.join(fpath, app.processFileName(file.substring(0, file.length - 9), yaml.in));
               expect(Fs.existsSync(out)).toBe(true);
-              let a = Fs.readFileSync(f, 'utf8');
-              let b = Fs.readFileSync(out, 'utf8');
-              expect(a).toBeSimilar(b);
+              let e = Fs.readFileSync(f, 'utf8');
+              let r = Fs.readFileSync(out, 'utf8');
+              expect(r).toBeSimilar(e);
               tested = true;
             }
           } else {
