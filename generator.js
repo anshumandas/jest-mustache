@@ -39,33 +39,27 @@ function getPartials(dir, defPartials) {
   return partials;
 }
 
-async function applyHandler(inputModel, fullSpec, version, handler) {
+async function applyHandler(inputModel, fullSpec, version, handler, pre) {
   inputModel = inputModel || {'value': fullSpec};
-
-  // console.log(`Tranform
-  //   ${Chalk.blue(JSON.stringify(fullSpec))}
-  //   Node: ${Chalk.yellow(JSON.stringify(inputModel))}
-  //   `);
-  // console.log(`Applying ${Chalk.blue(file)} Mustache`);
   //inputModel must be  single schema
-  return handler.handle ? await handler.handle(inputModel, fullSpec, version) : fullSpec;
+  return handler.handle ? await handler.handle(inputModel, fullSpec, version, pre) : fullSpec;
 }
 
-function applyMustache(file, inputs) {
-  let partials = getPartials(Path.dirname(file));
+function applyMustache(templateFile, inputs) {
+  let partials = getPartials(Path.dirname(templateFile));
   // console.log(`Partials ${Chalk.blue(JSON.stringify(_.keys(partials)))}`);
-  let template = Fs.readFileSync(file, 'utf8');
+  let template = Fs.readFileSync(templateFile, 'utf8');
   let node = Mustache.render(template, inputs, partials);
   return node;
 }
 
-function writeAndLog(filepath, filename, contents) {
+function writeAndLog(outpath, filename, contents) {
   //split file path and mkdirs if not existing
-  Fs.mkdirpSync(filepath, { recursive: true }, (err) => {
+  Fs.mkdirpSync(outpath, { recursive: true }, (err) => {
     if (err) throw err;
   });
 
-  var fpath = Path.join(filepath, filename);
+  var fpath = Path.join(outpath, filename);
   Fs.writeFileSync(fpath, contents);
   // console.log(`Created ${Chalk.blue(fpath)}`);
 }
@@ -79,13 +73,13 @@ function processFileName(filename, inputs) {
   return c;
 }
 
-function transform(filepath, file, spec, ins){
+function transform(outpath, templateFile, spec, ins){
   let yml = {};
   yml = _.merge(yml, spec);
   for (var i = 0; i < ins.length; i++) {
     let inp = ins[i].value || {};
-    let content = generate(filepath, file, inp);
-    var spl = _.split(file, '.');
+    let content = generate(outpath, templateFile, inp);
+    var spl = _.split(templateFile, '.');
     if(spl.length != 3 || 'yaml' == spl[1] || 'json' == spl[1] || 'yml' == spl[1]) {
       let c = Yaml.safeLoad(content);
       yml = _.merge(yml, c);
@@ -96,46 +90,47 @@ function transform(filepath, file, spec, ins){
   return yml;
 }
 
-function generate(filepath, file, inputs){
+function generate(outpath, templateFile, inputs){
   let contents = {};
-  if(file.endsWith('.mustache')) {
-    contents = applyMustache(file, inputs);
-    if(filepath) {
+  if(templateFile.endsWith('.mustache')) {
+    contents = applyMustache(templateFile, inputs);
+    if(outpath) {
       //remove the musache extension
-      let filename = file.substring(file.lastIndexOf('/')+1, file.length - 9);
+      let filename = templateFile.substring(templateFile.lastIndexOf('/')+1, templateFile.length - 9);
       filename = processFileName(filename, inputs);
       // console.log(`Filename ${Chalk.yellow(filename)}`);
-      writeAndLog(filepath, filename, contents);
+      writeAndLog(outpath, filename, contents);
     }
   }
   return contents;
 }
 
-async function generateAll(filepath, file, spec, pathExpression, version, handler, mergeWithSpec){
+async function generateAll(outpath, templateFile, spec, pathExpression, version, handler, mergeWithSpec){
   let ins = [];
-  if(handler.pre) handler.pre(spec);
+  let filename = templateFile.substring(templateFile.lastIndexOf('/')+1);
+  let pre = (handler.pre) ? await handler.pre(spec) : null;
   if(handler.handle) {
     if(pathExpression != null) {
       for(var node of JPath.nodes(spec, pathExpression)) {
         let model = {name: _.last(node.path), value: node.value};
 
-        let inputs = await applyHandler(model, spec, version, handler);
-        if(filepath && file.includes('__')) {
-          generate(filepath, file, inputs);
+        let inputs = await applyHandler(model, spec, version, handler, pre);
+        if(outpath && filename.includes('__')) {
+          generate(outpath, templateFile, inputs);
         }
         ins.push({ name:_.last(node.path), value: inputs});
       };
     } else {
-      let inputs = await applyHandler({value: spec}, spec, version, handler);
+      let inputs = await applyHandler({value: spec}, spec, version, handler, pre);
       ins.push({value:inputs});
     }
   }
 
   let ret = spec;
   if(mergeWithSpec) {
-    ret = transform(filepath, file, spec, ins);
-  } else if(!file.includes('__')) {
-    generate(filepath, file, handler.post ? handler.post(spec, ins) : ins[0].value);
+    ret = transform(outpath, templateFile, spec, ins);
+  } else if(!filename.includes('__')) {
+    generate(outpath, templateFile, handler.post ? await handler.post(spec, ins) : ins[0].value);
   }
 
   return ret;
