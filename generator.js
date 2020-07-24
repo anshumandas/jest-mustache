@@ -129,8 +129,13 @@ async function generateAll(outpath, templateFile, spec, pathExpression, version,
   let ret = spec;
   if(mergeWithSpec) {
     ret = transform(outpath, templateFile, spec, ins);
-  } else if(!filename.includes('__')) {
+  } else if(pathExpression || !filename.includes('__')) {
     generate(outpath, templateFile, handler.post ? await handler.post(spec, ins) : ins[0].value);
+  } else if(!pathExpression && filename.includes('__')) {
+    ins = handler.post ? await handler.post(spec, ins, filename) : ins;
+    for (var i = 0; i < ins.length; i++) {
+      generate(outpath, templateFile, ins[i]);
+    }
   }
 
   return ret;
